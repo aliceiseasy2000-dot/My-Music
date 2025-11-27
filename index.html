@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My-Music — Playlist</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Arial; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.6rem; }
+    #playlist { list-style: none; padding: 0; margin: .5rem 0; }
+    #playlist li { padding: .6rem; border-bottom: 1px solid #eee; cursor: pointer; }
+    #playlist li.playing { background: #f0f8ff; }
+    audio { width: 100%; margin-top: 1rem; }
+    .meta { color: #666; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <h1>My-Music — Playlist</h1>
+  <p>Metti i file .mp3 nella cartella <strong>tracks/</strong>. La playlist viene letta da <code>tracks.json</code>.</p>
+
+  <ul id="playlist">
+    <li class="meta">Caricamento playlist…</li>
+  </ul>
+
+  <audio id="player" controls preload="none">
+    <source id="source" src="" type="audio/mpeg">
+    Il tuo browser non supporta l'elemento audio.
+  </audio>
+
+  <script>
+    const list = document.getElementById('playlist');
+    const player = document.getElementById('player');
+    const source = document.getElementById('source');
+
+    function playSrc(src, li) {
+      document.querySelectorAll('#playlist li').forEach(i => i.classList.remove('playing'));
+      if (li) li.classList.add('playing');
+      source.src = src;
+      player.load();
+      player.play().catch(()=>{});
+    }
+
+    function makeLi(track) {
+      const li = document.createElement('li');
+      li.textContent = track.title || track.file;
+      li.dataset.src = track.file;
+      return li;
+    }
+
+    fetch('tracks.json', {cache: 'no-store'}).then(r => {
+      if (!r.ok) throw new Error('tracks.json non trovato');
+      return r.json();
+    }).then(data => {
+      list.innerHTML = '';
+      if (!Array.isArray(data) || data.length === 0) {
+        list.innerHTML = '<li class="meta">Nessun brano trovato. Aggiungi file in tracks/ e modifica tracks.json.</li>';
+        return;
+      }
+      data.forEach(t => list.appendChild(makeLi(t)));
+      list.addEventListener('click', (e) => {
+        const li = e.target.closest('li');
+        if (!li) return;
+        const src = li.dataset.src;
+        if (!src) return;
+        playSrc(src, li);
+      });
+    }).catch(err => {
+      list.innerHTML = '<li class="meta">Errore caricamento playlist: ' + err.message + '</li>';
+    });
+  </script>
+</body>
+</html>
